@@ -21,7 +21,7 @@ class ImageSimilarityApp(QWidget):
 
     def init_ui(self):
         self.setMinimumSize(600, 400)
-        self.setGeometry(100, 100, 700, 400)
+        self.setGeometry(100, 100, 800, 500)
         self.setWindowTitle('Калькулятор сходства изображений')
         
         self.label1 = QLabel(self)
@@ -41,8 +41,11 @@ class ImageSimilarityApp(QWidget):
         load_image2_button = QPushButton('Загрузить изображение 2', self, font=QFont('Arial', 10))
         load_image2_button.clicked.connect(self.load_image2)
 
-        calculate_button = QPushButton('Сравнить изображения', self, font=QFont('Arial', 10))
-        calculate_button.clicked.connect(self.calculate_similarity)
+        simm_calculate_button = QPushButton('Сравнить изображения, используя метод SIMM', self, font=QFont('Arial', 10))
+        simm_calculate_button.clicked.connect(self.calculate_simm_similarity)
+        
+        mse_calculate_button = QPushButton('Сравнить изображения, используя метод MSE', self, font=QFont('Arial', 10))
+        mse_calculate_button.clicked.connect(self.calculate_mse_similarity)
 
         hbox_images = QHBoxLayout()
         hbox_images.addWidget(self.label1)
@@ -57,7 +60,8 @@ class ImageSimilarityApp(QWidget):
         layout = QVBoxLayout(self)
         layout.addLayout(hbox_images)
         layout.addLayout(vbox_buttons)
-        layout.addWidget(calculate_button)
+        layout.addWidget(simm_calculate_button)
+        layout.addWidget(mse_calculate_button)
         layout.addWidget(self.result_label)
 
     def display_image(self, image, label):
@@ -90,23 +94,21 @@ class ImageSimilarityApp(QWidget):
             self.image2 = convert_image_color(self.image2)
             self.display_image(self.image2, self.label2)
 
-    def calculate_similarity(self):
+    def calculate_simm_similarity(self):
         if self.image1 is not None and self.image2 is not None:
             gray_image1 = cv2.cvtColor(self.image1, cv2.COLOR_BGR2GRAY)
             gray_image2 = cv2.cvtColor(self.image2, cv2.COLOR_BGR2GRAY)
 
             ssim_index, _ = ssim(gray_image1, gray_image2, full=True)
             percentage_similarity = ssim_index * 100
+            self.result_label.setText(f"Процент схожести двух изображений (SIMM): {percentage_similarity:.2f}%")
 
-            self.result_label.setText(f"Процент схожести двух изображений: {percentage_similarity:.2f}%")
+    def calculate_mse_similarity(self):
+        if self.image1 is not None and self.image2 is not None:
+            mse_value = ((self.image1 - self.image2) ** 2).mean()
+            percentage_similarity = (1 - mse_value / 255.0) * 100  # Нормализуем значение
+            self.result_label.setText(f"Процент схожести двух изображений (MSE): {percentage_similarity:.2f}%")
 
-    def display_image(self, image, label):
-        if image is not None:
-            height, width, channel = image.shape
-            bytes_per_line = 3 * width
-            q_image = QImage(image.data, width, height, bytes_per_line, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(q_image)
-            label.setPixmap(pixmap)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
